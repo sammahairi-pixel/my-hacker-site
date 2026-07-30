@@ -55,6 +55,33 @@
     #main-content {
       display: none;
     }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+    }
+    #command-output {
+      white-space: pre-wrap;
+      min-height: 60px;
+      margin-bottom: 10px;
+    }
+    .command-line {
+      display: flex;
+      align-items: center;
+    }
+    .prompt-symbol {
+      margin-right: 8px;
+    }
+    #command-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #00ff41;
+      font-family: 'Courier New', monospace;
+      font-size: 1em;
+      flex: 1;
+    }
   </style>
 </head>
 <body>
@@ -71,6 +98,19 @@
     <div id="main-content">
       <h1>Hello, world!</h1>
       <p>This is ??? website, and I made it.<span class="cursor">_</span></p>
+
+      <div class="terminal-box">
+        <div class="stat-row"><span>Visitor count:</span><span id="visitor-count">Loading...</span></div>
+        <div class="stat-row"><span>Time until mainframe lockdown:</span><span id="countdown">Loading...</span></div>
+      </div>
+
+      <div class="terminal-box">
+        <div id="command-output">Type "help" for a list of commands.</div>
+        <div class="command-line">
+          <span class="prompt-symbol">&gt;</span>
+          <input type="text" id="command-input" autocomplete="off" autofocus>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -131,11 +171,63 @@
       } else {
         setTimeout(() => {
           document.getElementById('main-content').style.display = 'block';
+          startCountdown();
         }, 500);
       }
     }
-
     typeLine();
+
+    // Visitor counter (fake, random-ish but consistent per browser using localStorage-free approach)
+    const visitorNumber = Math.floor(Math.random() * 9000) + 1000;
+    document.getElementById('visitor-count').textContent = "#" + String(visitorNumber).padStart(6, '0');
+
+    // Countdown timer
+    function startCountdown() {
+      let totalSeconds = 5 * 60 * 60 + 59 * 60 + 23; // starts around 5:59:23
+      const countdownEl = document.getElementById('countdown');
+
+      setInterval(() => {
+        if (totalSeconds > 0) {
+          totalSeconds--;
+        } else {
+          totalSeconds = 5 * 60 * 60 + 59 * 60 + 23; // reset when it hits zero
+        }
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        countdownEl.textContent =
+          String(h).padStart(2, '0') + ":" +
+          String(m).padStart(2, '0') + ":" +
+          String(s).padStart(2, '0');
+      }, 1000);
+    }
+
+    // Fake command line input
+    const commandInput = document.getElementById('command-input');
+    const commandOutput = document.getElementById('command-output');
+
+    const responses = {
+      help: "Available commands: help, about, hack, whoami, clear",
+      about: "This site was built by a curious human learning to code.",
+      hack: "Initiating hack sequence... just kidding. Nice try.",
+      whoami: "You are an anonymous visitor to this terminal.",
+      clear: ""
+    };
+
+    commandInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const cmd = commandInput.value.trim().toLowerCase();
+        if (cmd === 'clear') {
+          commandOutput.textContent = '';
+        } else if (responses[cmd]) {
+          commandOutput.textContent += "\n> " + cmd + "\n" + responses[cmd];
+        } else if (cmd !== '') {
+          commandOutput.textContent += "\n> " + cmd + "\nCommand not found. Type 'help' for options.";
+        }
+        commandInput.value = '';
+        commandOutput.scrollTop = commandOutput.scrollHeight;
+      }
+    });
   </script>
 
 </body>
