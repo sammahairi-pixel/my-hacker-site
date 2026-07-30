@@ -82,11 +82,71 @@
       font-size: 1em;
       flex: 1;
     }
+    #light-mode-btn {
+      background: transparent;
+      border: 1px solid #00ff41;
+      color: #00ff41;
+      font-family: 'Courier New', monospace;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    #light-mode-btn:hover {
+      background: rgba(0, 255, 65, 0.1);
+    }
+    #flash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 0.1s;
+    }
+    #joke-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 20, 0, 0.95);
+      border: 1px solid #00ff41;
+      box-shadow: 0 0 20px #00ff41;
+      padding: 20px 30px;
+      border-radius: 4px;
+      z-index: 1000;
+      display: none;
+      text-align: center;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 20, 0, 0.95);
+      border: 1px solid #00ff41;
+      box-shadow: 0 0 10px #00ff41;
+      padding: 12px 20px;
+      border-radius: 4px;
+      z-index: 998;
+      transform: translateX(150%);
+      transition: transform 0.3s ease-out;
+    }
+    .toast.show {
+      transform: translateX(0);
+    }
   </style>
 </head>
 <body>
 
   <canvas id="matrix"></canvas>
+  <div id="flash-overlay"></div>
+  <div id="joke-message">
+    <p>😄 Just kidding, this is a hacker site.<br>There is no light mode here.</p>
+  </div>
+  <div class="toast" id="toast"></div>
 
   <div class="content">
     <div class="last-login" id="last-login"></div>
@@ -98,6 +158,8 @@
     <div id="main-content">
       <h1>Hello, world!</h1>
       <p>This is ??? website, and I made it.<span class="cursor">_</span></p>
+
+      <button id="light-mode-btn">Switch to light mode</button>
 
       <div class="terminal-box">
         <div class="stat-row"><span>Visitor count:</span><span id="visitor-count">Loading...</span></div>
@@ -177,20 +239,20 @@
     }
     typeLine();
 
-    // Visitor counter (fake, random-ish but consistent per browser using localStorage-free approach)
+    // Visitor counter
     const visitorNumber = Math.floor(Math.random() * 9000) + 1000;
     document.getElementById('visitor-count').textContent = "#" + String(visitorNumber).padStart(6, '0');
 
     // Countdown timer
     function startCountdown() {
-      let totalSeconds = 5 * 60 * 60 + 59 * 60 + 23; // starts around 5:59:23
+      let totalSeconds = 5 * 60 * 60 + 59 * 60 + 23;
       const countdownEl = document.getElementById('countdown');
 
       setInterval(() => {
         if (totalSeconds > 0) {
           totalSeconds--;
         } else {
-          totalSeconds = 5 * 60 * 60 + 59 * 60 + 23; // reset when it hits zero
+          totalSeconds = 5 * 60 * 60 + 59 * 60 + 23;
         }
         const h = Math.floor(totalSeconds / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
@@ -202,31 +264,85 @@
       }, 1000);
     }
 
+    // Achievement toast system
+    const unlockedAchievements = new Set();
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function unlockAchievement(id, message) {
+      if (!unlockedAchievements.has(id)) {
+        unlockedAchievements.add(id);
+        showToast(message);
+      }
+    }
+
     // Fake command line input
     const commandInput = document.getElementById('command-input');
     const commandOutput = document.getElementById('command-output');
+    let commandCount = 0;
 
     const responses = {
-      help: "Available commands: help, about, hack, whoami, clear",
+      help: "Available commands: help, about, hack, whoami, clear, secret",
       about: "This site was built by a curious human learning to code.",
       hack: "Initiating hack sequence... just kidding. Nice try.",
       whoami: "You are an anonymous visitor to this terminal.",
-      clear: ""
+      clear: "",
+      secret: "You found a hidden page. Opening it now..."
     };
 
     commandInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         const cmd = commandInput.value.trim().toLowerCase();
+
         if (cmd === 'clear') {
           commandOutput.textContent = '';
-        } else if (responses[cmd]) {
+        } else if (cmd === 'secret') {
+          commandOutput.textContent += "\n> " + cmd + "\n" + responses[cmd];
+          unlockAchievement('secret', '🏆 Achievement unlocked: Secret Finder!');
+          setTimeout(() => {
+            window.open('secret.html', '_blank');
+          }, 800);
+        } else if (responses[cmd] !== undefined) {
           commandOutput.textContent += "\n> " + cmd + "\n" + responses[cmd];
         } else if (cmd !== '') {
           commandOutput.textContent += "\n> " + cmd + "\nCommand not found. Type 'help' for options.";
         }
+
         commandInput.value = '';
         commandOutput.scrollTop = commandOutput.scrollHeight;
+
+        commandCount++;
+        if (commandCount === 1) {
+          unlockAchievement('first-command', '🏆 Achievement unlocked: First Command!');
+        }
+        if (commandCount === 5) {
+          unlockAchievement('five-commands', '🏆 Achievement unlocked: Power User!');
+        }
       }
+    });
+
+    // Light mode joke button
+    const lightModeBtn = document.getElementById('light-mode-btn');
+    const flashOverlay = document.getElementById('flash-overlay');
+    const jokeMessage = document.getElementById('joke-message');
+
+    lightModeBtn.addEventListener('click', function() {
+      flashOverlay.style.opacity = '1';
+      setTimeout(() => {
+        flashOverlay.style.opacity = '0';
+        jokeMessage.style.display = 'block';
+        unlockAchievement('light-mode', '🏆 Achievement unlocked: Curious Clicker!');
+        setTimeout(() => {
+          jokeMessage.style.display = 'none';
+        }, 2500);
+      }, 150);
     });
   </script>
 
