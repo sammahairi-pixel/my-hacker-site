@@ -9,16 +9,81 @@
       font-family: 'Courier New', monospace;
       padding: 40px;
       line-height: 1.6;
+      margin: 0;
+      overflow-x: hidden;
     }
     h1 {
       text-shadow: 0 0 10px #00ff41;
       border-bottom: 1px solid #00ff41;
       padding-bottom: 10px;
     }
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+    .cursor {
+      display: inline-block;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      opacity: 0.4;
+    }
   </style>
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <p>This is my website, and I made it myself.</p>
+
+  <canvas id="matrix"></canvas>
+
+  <div class="content">
+    <h1>Hello, world!</h1>
+    <p>This is my website, and I made it myself.<span class="cursor">_</span></p>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const letters = "アイウエオカキクケコサシスセソタチツテト0123456789";
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(13, 13, 13, 0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#00ff41";
+      ctx.font = fontSize + "px monospace";
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = letters[Math.floor(Math.random() * letters.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }
+
+    setInterval(drawMatrix, 33);
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+
 </body>
 </html>
+
